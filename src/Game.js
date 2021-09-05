@@ -13,7 +13,7 @@ function Game() {
   const [initialReady, setInitialReady] = useState({'x': 0, 'o': 0})
   const [currentMove, setCurrentMove] = useState([])
   
-
+  
   console.log(currentMove);
   const setCellColor = (row, col) => {
     const colors = {
@@ -33,25 +33,9 @@ function Game() {
         initialPlacement(row,col)
       } 
     } else {
-      // const newBoard = produce(board, boardCopy => {
-      //   boardCopy[row][col].level = (boardCopy[row][col].level + 1)% 5
-      // })
-      // setBoard(newBoard)
-      // changeTurns()
       if (currentMove.length < 3) {
         setCurrentMove([...currentMove, [row,col]])
       } 
-      let validMove = false
-      if (currentMove.length === 2) {
-        validMove = checkValidMove(currentMove)
-        if(!validMove) {
-          setCurrentMove([])
-        }
-      }
-      if (validMove) {
-        console.log('can continue');
-        setCurrentMove([])
-      }
     }
   }
 
@@ -88,6 +72,36 @@ function Game() {
     return true
   }
 
+  const checkValidBuild = (moves) => {
+    const xFinish = moves[1][0]
+    const yFinish = moves[1][1]
+
+    const xBuild = moves[2][0]
+    const yBuild = moves[2][1]
+
+    const xChange = Math.abs(xBuild - xFinish)
+    const yChange = Math.abs(yBuild - yFinish)
+
+    console.log(xChange, yChange, xBuild, yBuild, xFinish, yFinish);
+
+    if (board[xBuild][yBuild].player) {
+      console.log('cant build on player');
+      return false
+    }
+
+    if (board[xBuild][yBuild].level === 4) {
+      console.log('build at max height');
+      return false
+    }
+
+    if (xChange > 1 || yChange > 1) {
+      console.log('invalid buildasdfa');
+      return false
+    }
+
+    return true
+
+  }
   const checkValidMove = (moves) => {
     console.log('checking moves', moves);
     const xStart = moves[0][0]
@@ -98,6 +112,9 @@ function Game() {
 
     const xChange = Math.abs(xFinish - xStart)
     const yChange = Math.abs(yFinish - yStart)
+    if (gameState !== 'UNFINISHED') {
+      return false
+    }
     if (!(0 <= xStart <= 4) || !(0 <= xFinish <= 4) ||!(0 <= yStart <= 4) ||!(0 <= yFinish <= 4) ) {
       console.log('impossible move');
       return false
@@ -135,11 +152,49 @@ function Game() {
   }
 
   const makeMove = (moves) => {
-    if (gameState !== 'UNFINISHED') {
-      return false
-    }
+    console.log('making move');
+    const xStart = moves[0][0]
+    const xFinish = moves[1][0]
+
+    const yStart = moves[0][1]
+    const yFinish = moves[1][1]
+
+    const xBuild = moves[2][0]
+    const yBuild = moves[2][1]
+
+    const newBoard = produce(board, boardCopy => {
+      boardCopy[xStart][yStart].player = null
+      boardCopy[xFinish][yFinish].player = currentTurn
+      boardCopy[xBuild][yBuild].level += 1
+    })
+    setBoard(newBoard)
+    changeTurns()    
   }
 
+  if (currentMove.length ===3) {
+    let validMove = false
+    if (currentMove.length === 3) {
+      console.log('where i need');
+      validMove = checkValidMove(currentMove)
+      if(!validMove) {
+        setCurrentMove([])
+      }
+    }
+    let validBuild = false
+    if (validMove) {
+      console.log('can continue');
+      validBuild = checkValidBuild(currentMove)
+      
+      if (!validBuild) {
+        console.log('invalid build', validBuild);
+        setCurrentMove([])
+      }
+    }
+
+    if (validBuild) { 
+      makeMove(currentMove)
+    }
+  }
   return (
     <div>
       <div style={{
