@@ -8,12 +8,13 @@ function Game() {
   const CELLS = 100
   const generateEmptyGrid = () => Array.from({length: SIZE}).map(() => Array.from({length: SIZE}).fill({player: null, level:0}));
   const [board, setBoard] = useState(generateEmptyGrid())
-  const [gameState, setGameState] = useState('UNFINISHED')
+  const [gameState, setGameState] = useState('INITIAL')
   const [currentTurn, setCurrentTurn] = useState('x')
   const [initialReady, setInitialReady] = useState({'x': 0, 'o': 0})
+  const [currentMove, setCurrentMove] = useState([])
+  
 
-  console.log(board)
-
+  console.log(currentMove);
   const setCellColor = (row, col) => {
     const colors = {
       0: 'white',
@@ -26,24 +27,31 @@ function Game() {
     return colors[board[row][col].level]
   }
 
-  const setCellPlayer = (row, col) => {
-    const players = {
-      'x': 'pink',
-      'o': 'yellow'
-    }
-
-  }
-
   const handleClick = (row, col) => {
-    if (initialReady[currentTurn] < 2) {
-      console.log(initialReady);
-      initialPlacement(row,col)
+    if (gameState === 'INITIAL') {
+      if (initialReady[currentTurn] < 2) {
+        initialPlacement(row,col)
+      } 
     } else {
-      const newBoard = produce(board, boardCopy => {
-        boardCopy[row][col].level = (boardCopy[row][col].level + 1)% 5
-      })
-      setBoard(newBoard)
-      changeTurns()
+      // const newBoard = produce(board, boardCopy => {
+      //   boardCopy[row][col].level = (boardCopy[row][col].level + 1)% 5
+      // })
+      // setBoard(newBoard)
+      // changeTurns()
+      if (currentMove.length < 3) {
+        setCurrentMove([...currentMove, [row,col]])
+      } 
+      let validMove = false
+      if (currentMove.length === 2) {
+        validMove = checkValidMove(currentMove)
+        if(!validMove) {
+          setCurrentMove([])
+        }
+      }
+      if (validMove) {
+        console.log('can continue');
+        setCurrentMove([])
+      }
     }
   }
 
@@ -72,22 +80,66 @@ function Game() {
     })
     setBoard(newBoard)
     setInitialReady(produce(initialReady, initialReadyCopy => {initialReadyCopy[currentTurn] = initialReadyCopy[currentTurn] + 1}))
-    
+
+    if (initialReady['x'] + initialReady['o'] === 3) {
+      setGameState('UNFINISHED')
+    }
     changeTurns()
     return true
   }
 
-  const checkValidMove = (xStart, yStart, xFinish, yFinish) => {
+  const checkValidMove = (moves) => {
+    console.log('checking moves', moves);
+    const xStart = moves[0][0]
+    const xFinish = moves[1][0]
+
+    const yStart = moves[0][1]
+    const yFinish = moves[1][1]
+
     const xChange = Math.abs(xFinish - xStart)
     const yChange = Math.abs(yFinish - yStart)
-
-    if (xChange > 1 || yChange > 1) {
+    if (!(0 <= xStart <= 4) || !(0 <= xFinish <= 4) ||!(0 <= yStart <= 4) ||!(0 <= yFinish <= 4) ) {
+      console.log('impossible move');
       return false
     }
-    if (!board[xStart][yStart] || !board[xFinish][yFinish]) {
+    if (board[xStart][yStart].player !== currentTurn) {
+      console.log('not current players piece');
+      return false
+    }
+    if (board[xFinish][yFinish].player) {
+      console.log('player already at finish location');
+      return false
+    }
+
+    if (board[xFinish][yFinish].level >= 4) {
+      console.log('cant move onto dome');
+      return false
+    }
+    if (moves[0] === moves[1]) {
+      console.log('didnt move anywhere');
+      return false
+    }
+
+    if (xChange > 1 || yChange > 1) {
+      console.log('invalid move');
+      return false
+    }
+
+    if (board[xFinish][yFinish].level > board[xStart][yStart].level && (board[xFinish][yFinish].level - board[xStart][yStart].level) > 1) {
+      console.log('cant leap more than one level up');
+      return false
+    }
+  
+    console.log('valid move');
+    return true
+  }
+
+  const makeMove = (moves) => {
+    if (gameState !== 'UNFINISHED') {
       return false
     }
   }
+
   return (
     <div>
       <div style={{
@@ -108,7 +160,6 @@ function Game() {
                 border: '1px solid black'
               }}>
                 <div style={{width: `${CELLS}px`,height: `${CELLS}px`, fontSize:'60px', color: 'limegreen', pointerEvents:'none'}}>{board[i][k].player ? board[i][k].player: ''}</div>
-                {/* <img src={diamond} style={{width: `${CELLS}px`,height: `${CELLS}px`}}></img> */}
               </div>))
         }
       </div>
