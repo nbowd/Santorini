@@ -1,3 +1,9 @@
+.board-grid {
+  background-color: green;
+}
 .cell {
-  background: red;
+  font-size:50px;
+  color: limegreen; 
+  pointer-events:none; 
+  margin: 25% auto;
 }
