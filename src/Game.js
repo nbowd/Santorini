@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import produce from 'immer';
 import './Game.css'; 
 
@@ -18,16 +18,17 @@ function Game() {
 
   // Temporary storage to hold multiple click selections, 
   // is composed of start cell, finish cell, and build cell to create a valid move.
-  const [currentMove, setCurrentMove] = useState([])
+  const [moveStep, setMoveStep] = useState('start')
+  const [currentMove, setCurrentMove] = useState({xStart: null, yStart: null, xFinish: null, yFinish: null, xBuild: null, yBuild: null})
  
   // Color lookup function for inline styles, represents tower levels.
   const setCellColor = (row, col) => {
     const colors = {
-      0: 'green',
+      0: 'green', // ground level
       1: '#999999',
       2: '#444444',
       3: 'black',
-      4: 'red'
+      4: 'red'  // dome
     }
     return colors[board[row][col].level]
   }
@@ -46,17 +47,38 @@ function Game() {
 
   // While game is running, adds current move selection to currentMove state until is has collected start, stop, and build locations.
 
-  // When a winner is decided, the logic will not advance but instead will just log out the winner.
+  // When a winner is decided, the logic will not advance the game but instead will log out the winner.
   const handleClick = (row, col) => {
     if (gameState === 'INITIAL') {
       initialPlacement(row,col)
     } else if (gameState ==='UNFINISHED') {
-      setBoard(produce(board, boardCopy => {
-        boardCopy[row][col].active = true
-      }))
-      setCurrentMove([...currentMove, [row,col]])
+      setBoard(produce(board, boardCopy => {boardCopy[row][col].active = true}))
+      addMove(row,col)
     } else { // Winner declared
       console.log(gameState);
+    }
+  }
+
+  // Checks current move step to correctly assign cell clicks to the currentMove object, advances moveStep when finished
+  const addMove = (row,col) => {
+    if (moveStep === 'start') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xStart = row
+        currentMoveCopy.yStart = col
+      }))
+      setMoveStep('stop')
+    } else if (moveStep === 'stop') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xFinish = row
+        currentMoveCopy.yFinish = col
+      }))
+      setMoveStep('build')
+    } else if (moveStep === 'build') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xBuild = row
+        currentMoveCopy.yBuild = col
+      }))
+      setMoveStep('start')
     }
   }
 
@@ -67,36 +89,34 @@ function Game() {
       return false
     }
 
-    // Update board
-    const newBoard = produce(board, boardCopy => {
-      console.log('adding player piece');
+    // Update board with immer
+    setBoard(produce(board, boardCopy => {
       boardCopy[x][y].player = currentTurn
-    })
-    setBoard(newBoard)
+    }))
 
-    // Updates initial piece state count
-    setInitialReady(produce(initialReady, initialReadyCopy => {initialReadyCopy[currentTurn] = initialReadyCopy[currentTurn] + 1}))
+    // Updates initial piece state count with immer
+    setInitialReady(produce(initialReady, initialReadyCopy => {
+      initialReadyCopy[currentTurn] += 1
+    }))
 
     // All pieces have been played, switches handleClick() to its second functionality.
     if (initialReady['x'] + initialReady['o'] === 3) {
       setGameState('UNFINISHED')
     }
-    changeTurns()
 
+    changeTurns()
     return true
   }
 
-  // Checks validity of the 3 value of the currentMove state, the build action. Doesn't allow for building on top of players, 
-  // building out of range of finish position, or building on top of a domed tower. Voids entire move if invalid.
-  const checkValidBuild = useCallback((moves) => {
-    const xFinish = moves[1][0]
-    const yFinish = moves[1][1]
+  // Checks validity of the currentMove build action. Doesn't allow for building on top of players, building on the destination cell, building out of range of finish position, or building on top of a domed tower. Voids entire move if invalid.
+  const checkValidBuild = useCallback(({ xFinish, yFinish, xBuild, yBuild }) => {
+    const xBuildChange = Math.abs(xBuild - xFinish)
+    const yBuildChange = Math.abs(yBuild - yFinish)
 
-    const xBuild = moves[2][0]
-    const yBuild = moves[2][1]
-
-    const xChange = Math.abs(xBuild - xFinish)
-    const yChange = Math.abs(yBuild - yFinish)
+    if (board[xFinish][yFinish] === board[xBuild][yBuild]) {
+      console.log('cant build on destination');
+      return false
+    }
 
     if (board[xBuild][yBuild].player) {
       console.log('cant build on player');
@@ -108,8 +128,8 @@ function Game() {
       return false
     }
 
-    if (xChange > 1 || yChange > 1) {
-      console.log('invalid build');
+    if (xBuildChange > 1 || yBuildChange > 1) {
+      console.log('invalid build, too far');
       return false
     }
 
@@ -119,56 +139,59 @@ function Game() {
   // Checks validity of start and finish position of the piece to be moved. Checks for correct game state, 
   // prevents impossible and invalid moves such as climbing a domed tower. Verifies that the player is only moving up one level at most.
   // Prevents play after the game has ended.
-  const checkValidMove = useCallback((moves) => {
-    const xStart = moves[0][0]
-    const xFinish = moves[1][0]
-
-    const yStart = moves[0][1]
-    const yFinish = moves[1][1]
-
+  const checkValidMove = useCallback(({ xStart, xFinish ,yStart, yFinish }) => {
     const xChange = Math.abs(xFinish - xStart)
     const yChange = Math.abs(yFinish - yStart)
-    console.log(xStart, yStart, currentTurn);
 
     if (gameState !== 'UNFINISHED') {
-
       return false
     }
+
+    // If somehow an input is not within board bounds
     if (!(0 <= xStart <= 4) || !(0 <= xFinish <= 4) ||!(0 <= yStart <= 4) ||!(0 <= yFinish <= 4) ) {
       console.log('impossible move');
       return false
     }
+
+    // The piece being moved is not the current players, also catches cases where no initial piece was selected
     if (board[xStart][yStart].player !== currentTurn) {
       console.log('not current players piece');
       return false
     }
+
+    // Can't move to another player's cell
     if (board[xFinish][yFinish].player) {
       console.log('player already at finish location');
       return false
     }
 
+    // Can't move on top of a dome
     if (board[xFinish][yFinish].level >= 4) {
       console.log('cant move onto dome');
       return false
     }
-    if (moves[0] === moves[1]) {
-      console.log('didnt move anywhere');
-      return false
-    }
 
+    // Not an adjacent destination
     if (xChange > 1 || yChange > 1) {
-      console.log('invalid move');
+      console.log('invalid move, too far');
       return false
     }
 
+    // Can only move at most one level up. Can move any number of levels down.
     if (board[xFinish][yFinish].level > board[xStart][yStart].level && (board[xFinish][yFinish].level - board[xStart][yStart].level) > 1) {
       console.log('cant leap more than one level up');
       return false
     }
-  
-    console.log('valid move');
+    
+    // Begins valid build checks, if those pass then the entire move is deemed valid.
+    const validBuild = checkValidBuild(currentMove)
+    if (!validBuild) {
+      return false
+    }
+
     return true
-  }, [board, currentTurn, gameState]);
+
+  }, [board, checkValidBuild, currentMove, currentTurn, gameState]);
 
 
   // Checks if the finish position of the recently moved piece is on a max height, non-domed tower.
@@ -179,17 +202,8 @@ function Game() {
   }, [board, currentTurn])
 
   // Makes the changes to the board if all of the validation has passed, checks for win condition, and changes turn.
-  const makeMove = useCallback((moves) => {
+  const makeMove = useCallback(({xStart, xFinish, yStart, yFinish, xBuild, yBuild}) => {
     console.log('making move');
-    const xStart = moves[0][0]
-    const xFinish = moves[1][0]
-
-    const yStart = moves[0][1]
-    const yFinish = moves[1][1]
-
-    const xBuild = moves[2][0]
-    const yBuild = moves[2][1]
-
     const newBoard = produce(board, boardCopy => {
       boardCopy[xStart][yStart].player = null
       boardCopy[xFinish][yFinish].player = currentTurn
@@ -202,42 +216,25 @@ function Game() {
 
   const clearCurrentMove = useCallback(() => {
     setBoard(produce(board, boardCopy => {
-      currentMove.forEach(move => {
-        boardCopy[move[0]][move[1]].active = false
-      })
+      boardCopy[currentMove.xStart][currentMove.yStart].active = false
+      boardCopy[currentMove.xFinish][currentMove.yFinish].active = false
+      boardCopy[currentMove.xBuild][currentMove.yBuild].active = false
     }))
   
   }, [board, currentMove])
 
   // Checks on each state update for a potential move, involving 3 entries to the currentMove state. A start point, stop point, and build point.
   useEffect(() => {
-    console.log('move listener check');
-    if (currentMove.length ===3) {
-      let validMove = false
-      if (currentMove.length === 3) {
-        console.log(currentMove);
-        validMove = checkValidMove(currentMove)
-        if(!validMove) {
-          clearCurrentMove()
-          setCurrentMove([])
-        }
-      }
-      let validBuild = false
-      if (validMove) {
-        console.log('can continue');
-        validBuild = checkValidBuild(currentMove)
-        
-        if (!validBuild) {
-          console.log('invalid build', validBuild);
-          clearCurrentMove()
-          setCurrentMove([])
-        }
-      }
-      if (validBuild) { 
+    // Runs after 3 cell inputs have been registered
+    if (currentMove.yBuild !== null) {
+      if(!checkValidMove(currentMove)) {
+        clearCurrentMove()
+        setCurrentMove({xStart: null, yStart: null, xFinish: null, yFinish: null, xBuild: null, yBuild: null})
+      } else { 
         makeMove(currentMove)
       }
     }    
-  }, [currentMove, checkValidMove, clearCurrentMove, checkValidBuild, makeMove])
+  }, [currentMove, checkValidMove, clearCurrentMove, makeMove])
     
   
 
@@ -262,7 +259,6 @@ function Game() {
                 border: '1px solid black'
               }}>
                 {/* Player piece representations */}
-                {/* <div style={{width: '10px', height: '10px', backgroundColor:'yellow', margin: 'auto'}}></div> */}
                 <div className="cell" style={{width: `${CELLS/2}px`,height: `${CELLS/2}px`, backgroundColor: board[i][k].active? 'pink': null}}>{board[i][k].player ? board[i][k].player: ''}</div>
               </div>))
         }
