@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback} from 'react';
+import Cell from './Cell';
 import produce from 'immer';
 import './Game.css'; 
 
@@ -42,45 +43,18 @@ function Game() {
     }
   }, [currentTurn])
 
+
+  // Checks if the finish position of the recently moved piece is on a max height, non-domed tower.
+  const checkWin = useCallback((x, y) => {
+    if (board[x][y].level === 3) {
+      setGameState(`${currentTurn} is WINNER`)
+    }
+  }, [board, currentTurn])
+
   // If game just started, assigns initial clicks to piece placement,
   // alternating for each player until they have both pieces on the field.
 
   // While game is running, adds current move selection to currentMove state until is has collected start, stop, and build locations.
-
-  // When a winner is decided, the logic will not advance the game but instead will log out the winner.
-  const handleClick = (row, col) => {
-    if (gameState === 'INITIAL') {
-      initialPlacement(row,col)
-    } else if (gameState ==='UNFINISHED') {
-      setBoard(produce(board, boardCopy => {boardCopy[row][col].active = true}))
-      addMove(row,col)
-    } else { // Winner declared
-      console.log(gameState);
-    }
-  }
-
-  // Checks current move step to correctly assign cell clicks to the currentMove object, advances moveStep when finished
-  const addMove = (row,col) => {
-    if (moveStep === 'start') {
-      setCurrentMove(produce(currentMove, currentMoveCopy => {
-        currentMoveCopy.xStart = row
-        currentMoveCopy.yStart = col
-      }))
-      setMoveStep('stop')
-    } else if (moveStep === 'stop') {
-      setCurrentMove(produce(currentMove, currentMoveCopy => {
-        currentMoveCopy.xFinish = row
-        currentMoveCopy.yFinish = col
-      }))
-      setMoveStep('build')
-    } else if (moveStep === 'build') {
-      setCurrentMove(produce(currentMove, currentMoveCopy => {
-        currentMoveCopy.xBuild = row
-        currentMoveCopy.yBuild = col
-      }))
-      setMoveStep('start')
-    }
-  }
 
   const initialPlacement = (x, y) => {
     // Checks for pieces already in those positions
@@ -106,6 +80,29 @@ function Game() {
 
     changeTurns()
     return true
+  }
+
+  // Checks current move step to correctly assign cell clicks to the currentMove object, advances moveStep when finished
+  const addMove = (row,col) => {
+    if (moveStep === 'start') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xStart = row
+        currentMoveCopy.yStart = col
+      }))
+      setMoveStep('stop')
+    } else if (moveStep === 'stop') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xFinish = row
+        currentMoveCopy.yFinish = col
+      }))
+      setMoveStep('build')
+    } else if (moveStep === 'build') {
+      setCurrentMove(produce(currentMove, currentMoveCopy => {
+        currentMoveCopy.xBuild = row
+        currentMoveCopy.yBuild = col
+      }))
+      setMoveStep('start')
+    }
   }
 
   // Checks validity of the currentMove build action. Doesn't allow for building on top of players, building on the destination cell, building out of range of finish position, or building on top of a domed tower. Voids entire move if invalid.
@@ -193,14 +190,6 @@ function Game() {
 
   }, [board, checkValidBuild, currentMove, currentTurn, gameState]);
 
-
-  // Checks if the finish position of the recently moved piece is on a max height, non-domed tower.
-  const checkWin = useCallback((x, y) => {
-    if (board[x][y].level === 3) {
-      setGameState(`${currentTurn} is WINNER`)
-    }
-  }, [board, currentTurn])
-
   // Makes the changes to the board if all of the validation has passed, checks for win condition, and changes turn.
   const makeMove = useCallback(({xStart, xFinish, yStart, yFinish, xBuild, yBuild}) => {
     console.log('making move');
@@ -223,6 +212,18 @@ function Game() {
   
   }, [board, currentMove])
 
+  // When a winner is decided, the logic will not advance the game but instead will log out the winner.
+  const handleClick = (row, col) => {
+    if (gameState === 'INITIAL') {
+      initialPlacement(row,col)
+    } else if (gameState ==='UNFINISHED') {
+      setBoard(produce(board, boardCopy => {boardCopy[row][col].active = true}))
+      addMove(row,col)
+    } else { // Winner declared
+      console.log(gameState);
+    }
+  }
+
   // Checks on each state update for a potential move, involving 3 entries to the currentMove state. A start point, stop point, and build point.
   useEffect(() => {
     // Runs after 3 cell inputs have been registered
@@ -236,30 +237,21 @@ function Game() {
     }    
   }, [currentMove, checkValidMove, clearCurrentMove, makeMove])
     
-  
-
   return (
     <div 
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${SIZE}, ${CELLS}px)`,
-        justifyContent: 'center'
-    }}>
-      {board.map((rows, i) => 
-        rows.map((cols, k) => 
-          <div  
-            key={`${i}-${k}`} 
-            className='cell'
-            onClick={() => handleClick(i,k)}
-            style={{
-              width: `${CELLS}px`,
-              height: `${CELLS}px`,
-              backgroundColor: setCellColor(i,k),
-              border: '1px solid black'
-            }}>
-              {/* Player piece representations */}
-              <div className="piece" style={{width: `${CELLS/2}px`,height: `${CELLS/2}px`, backgroundColor: board[i][k].active?'pink': null}}>{board[i][k].player ? board[i][k].player: ''}</div>
-          </div>
+      className='game-board'
+      style={{ gridTemplateColumns: `repeat(${SIZE}, ${CELLS}px)` }}>
+      {board.map((rows, row) => 
+        rows.map((cols, col) => 
+          <Cell 
+            key={`${row}-${col}`}
+            handleClick={handleClick}
+            CELLS={CELLS}
+            setCellColor={setCellColor}
+            board={board}
+            row={row}
+            col={col}
+          />
         )
       )}
     </div>
