@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import produce from 'immer';
 import './Game.css'; 
 
@@ -239,30 +239,29 @@ function Game() {
   
 
   return (
-    <div>
-      <div 
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${SIZE}, ${CELLS}px)`,
-          justifyContent: 'center'
-      }}>
-        {board.map((rows, i) => 
-          rows.map((cols, k) => 
-            <div  
-              key={`${i}-${k}`} 
-              className='board-grid'
-              onClick={() => handleClick(i,k)}
-              style={{
-                width: `${CELLS}px`,
-                height: `${CELLS}px`,
-                backgroundColor: setCellColor(i,k),
-                border: '1px solid black'
-              }}>
-                {/* Player piece representations */}
-                <div className="cell" style={{width: `${CELLS/2}px`,height: `${CELLS/2}px`, backgroundColor: board[i][k].active? 'pink': null}}>{board[i][k].player ? board[i][k].player: ''}</div>
-              </div>))
-        }
-      </div>
+    <div 
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${SIZE}, ${CELLS}px)`,
+        justifyContent: 'center'
+    }}>
+      {board.map((rows, i) => 
+        rows.map((cols, k) => 
+          <div  
+            key={`${i}-${k}`} 
+            className='cell'
+            onClick={() => handleClick(i,k)}
+            style={{
+              width: `${CELLS}px`,
+              height: `${CELLS}px`,
+              backgroundColor: setCellColor(i,k),
+              border: '1px solid black'
+            }}>
+              {/* Player piece representations */}
+              <div className="piece" style={{width: `${CELLS/2}px`,height: `${CELLS/2}px`, backgroundColor: board[i][k].active?'pink': null}}>{board[i][k].player ? board[i][k].player: ''}</div>
+          </div>
+        )
+      )}
     </div>
   )
 }

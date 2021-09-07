@@ -1,7 +1,5 @@
-.board-grid {
-  background-color: green;
-}
-.cell {
+
+.piece {
   font-size:50px;
   color: white; 
   pointer-events:none; 
