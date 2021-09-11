@@ -56,7 +56,6 @@ function Game({state}) {
   const initialPlacement = (x, y) => {
     // Checks for pieces already in those positions
     if (board[x][y].player) {
-      console.log('player there already');
       return false
     }
 
@@ -109,7 +108,6 @@ function Game({state}) {
     const yBuildChange = Math.abs(yBuild - yFinish)
 
     if (board[xFinish][yFinish] === board[xBuild][yBuild]) {
-      console.log('cant build on destination');
       setErrorMessage('Can\'t build on destination')
       setTimeout(() => {
         setErrorMessage(null)
@@ -118,7 +116,6 @@ function Game({state}) {
     }
 
     if (board[xBuild][yBuild].player) {
-      console.log('cant build on player');
       setErrorMessage('Can\'t build on player')
       setTimeout(() => {
         setErrorMessage(null)
@@ -127,7 +124,6 @@ function Game({state}) {
     }
 
     if (board[xBuild][yBuild].level === 4) {
-      console.log('build at max height');
       setErrorMessage('Building at max height')
       setTimeout(() => {
         setErrorMessage(null)
@@ -136,7 +132,6 @@ function Game({state}) {
     }
 
     if (xBuildChange > 1 || yBuildChange > 1) {
-      console.log('invalid build, too far');
       setErrorMessage('Invalid build, too far')
       setTimeout(() => {
         setErrorMessage(null)
@@ -160,7 +155,6 @@ function Game({state}) {
 
     // If somehow an input is not within board bounds
     if (!(0 <= xStart <= 4) || !(0 <= xFinish <= 4) ||!(0 <= yStart <= 4) ||!(0 <= yFinish <= 4) ) {
-      console.log('impossible move');
       return false
     }
 
@@ -171,7 +165,6 @@ function Game({state}) {
 
     // Can't move to another player's cell
     if (board[xFinish][yFinish].player) {
-      console.log('player already at finish location');
       setErrorMessage('Player at destination')
       setTimeout(() => {
         setErrorMessage(null)
@@ -181,7 +174,6 @@ function Game({state}) {
 
     // Can't move on top of a dome
     if (board[xFinish][yFinish].level >= 4) {
-      console.log('cant move onto dome');
       setErrorMessage('Can\'t move on top of dome')
       setTimeout(() => {
         setErrorMessage(null)
@@ -191,7 +183,6 @@ function Game({state}) {
 
     // Not an adjacent destination
     if (xChange > 1 || yChange > 1) {
-      console.log('invalid move, too far');
       setErrorMessage('Invalid move, too far')
       setTimeout(() => {
         setErrorMessage(null)
@@ -201,7 +192,6 @@ function Game({state}) {
 
     // Can only move at most one level up. Can move any number of levels down.
     if (board[xFinish][yFinish].level > board[xStart][yStart].level && (board[xFinish][yFinish].level - board[xStart][yStart].level) > 1) {
-      console.log('cant leap more than one level up');
       setErrorMessage('Can\'t move more than one level up')
       setTimeout(() => {
         setErrorMessage(null)
@@ -222,7 +212,6 @@ function Game({state}) {
 
   // Makes the changes to the board if all of the validation has passed, checks for win condition, and changes turn.
   const makeMove = useCallback(({xStart, xFinish, yStart, yFinish, xBuild, yBuild}) => {
-    console.log('making move');
     const newBoard = produce(board, boardCopy => {
       boardCopy[xStart][yStart].player = null
       boardCopy[xFinish][yFinish].player = currentTurn
@@ -251,8 +240,6 @@ function Game({state}) {
     } else if (gameState ==='UNFINISHED') {
       setBoard(produce(board, boardCopy => {boardCopy[row][col].active = true}))
       addMove(row,col)
-    } else { // Winner declared
-      console.log(gameState);
     }
   }
 
