@@ -11,7 +11,8 @@ They can only move up one level at a time. A player wins when they move a Worker
 This is built with React. I originally wrote the game logic in Python for a class, but it didn't have a UI. This was a fun project to rebuild, it gave me a chance to clean up the existing logic and use some powerful Javascript/React features. 
 
 Next steps:
-<li>
-  <ul>Testing suite</ul>
-  <ul>Multiplayer with web sockets</ul>
-</li>
+<ul> 
+  <li>Testing suite</li>
+  <li>Multiplayer with web sockets</li>
+
+</ul>
