@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.css": "/Santorini/static/css/main.7bb5fca9.chunk.css",
+    "main.js": "/Santorini/static/js/main.28c16d75.chunk.js",
+    "main.js.map": "/Santorini/static/js/main.28c16d75.chunk.js.map",
+    "runtime-main.js": "/Santorini/static/js/runtime-main.4dc49638.js",
+    "runtime-main.js.map": "/Santorini/static/js/runtime-main.4dc49638.js.map",
+    "static/js/2.b28dcc59.chunk.js": "/Santorini/static/js/2.b28dcc59.chunk.js",
+    "static/js/2.b28dcc59.chunk.js.map": "/Santorini/static/js/2.b28dcc59.chunk.js.map",
+    "index.html": "/Santorini/index.html",
+    "static/css/main.7bb5fca9.chunk.css.map": "/Santorini/static/css/main.7bb5fca9.chunk.css.map",
+    "static/js/2.b28dcc59.chunk.js.LICENSE.txt": "/Santorini/static/js/2.b28dcc59.chunk.js.LICENSE.txt",
+    "static/media/blue-player.47f75bc6.png": "/Santorini/static/media/blue-player.47f75bc6.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.4dc49638.js",
+    "static/js/2.b28dcc59.chunk.js",
+    "static/css/main.7bb5fca9.chunk.css",
+    "static/js/main.28c16d75.chunk.js"
+  ]
+}
