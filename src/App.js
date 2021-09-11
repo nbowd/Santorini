@@ -4,6 +4,7 @@ import Game from './Game';
 import Options from './Options';
 
 function App() {
+  // Default settings
   const SIZE = 5
   const CELLS = 100
   const initState = 'ENDED'
@@ -27,6 +28,7 @@ function App() {
   const [moveStep, setMoveStep] = useState(initStep)
   const [currentMove, setCurrentMove] = useState(initMove)
  
+  // Single state object passed as a prop to be destructured as needed
   let state = {
     SIZE: SIZE,
     CELLS: CELLS,
@@ -46,6 +48,7 @@ function App() {
     setCurrentMove: setCurrentMove,
   }
 
+  // Logic for reset button
   const resetState = () => {
     setBoard(generateEmptyGrid())
     setGameState(initState)
@@ -56,10 +59,8 @@ function App() {
  
   return (
     <div className="App">
-      <Game  
-        state={state}
-      />
-      <Options resetState={resetState} state={state}/>
+      <Game state={state} />
+      <Options resetState={resetState} state={state} />
     </div>
   );
 }

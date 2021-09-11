@@ -4,3 +4,8 @@
   pointer-events:none; 
   margin: 25% auto;
 }
+
+img {
+  width: 80%;
+  margin: auto
+}
